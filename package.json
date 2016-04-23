@@ -1,0 +1,20 @@
+{
+  "name": "discord-bridge",
+  "version": "0.0.1",
+  "description": "Bridge between IRC and Discord",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bridge",
+    "irc",
+    "discord"
+  ],
+  "author": "UberActivist",
+  "license": "MIT",
+  "dependencies": {
+    "discord.io": "^1.8.8",
+    "internet-relay-chat": "^1.1.6"
+  }
+}

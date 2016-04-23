@@ -1,0 +1,25 @@
+{
+	"discord": {
+		"token": "token here"
+	},
+	"IRC": {
+		"username": "BridgeBot",
+		"realname": "BridgeBot",
+		"nick": "BridgeBot",
+		"server": {
+			"hostname": "irc.rizon.net",
+			"port": "6667",
+			"ssl": false,
+			"password": false
+		},
+		"floodDelay": 300,
+		"autoReconnect": 5000
+	},
+	"bridgeSettings": {
+		"channel": {
+			"irc": "#channel",
+			"discord": "channelID here",
+			"discordServer": "serverId here"
+		}
+	}
+}
