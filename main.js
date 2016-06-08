@@ -25,7 +25,8 @@ const Discord = require("discord.io"),
 ircbot.connect();
 
 //global vars and consts
-var ircCS = false;
+var ircCS = false,
+    discordCS = false;
 
 
 //events and shit
@@ -38,12 +39,13 @@ ircbot.on("registered", () => {
 
 bot.on("ready", () => {
     console.log("Connection established with Discord.");
+    discordCS = true;
     start();
 });
 
 
 function start() {
-    if (!(bot.connected && ircCS)) {
+    if (!(discordCS && ircCS)) {
         return;
     }
     if (config.bridgeSettings.channel.discordServer in bot.servers) {
@@ -58,22 +60,36 @@ function start() {
                 if (channelID != config.bridgeSettings.channel.discord) {
                     return;
                 }
-                if (message.startsWith("!") || message.startsWith("&") || message.startsWith("$")) {
-                    return;
+                for (var i of config.bridgeSettings.other.ignore.triggers) {
+                    if (message.startsWith(i)) {
+                        return;
+                    }
+                }
+                for (var i of config.bridgeSettings.other.ignore.discordUsers) {
+                    if (userID == i) {
+                        return;
+                    }
                 }
                 if (userID == bot.id) {
                     return;
                 }
-                ircbot.message(config.bridgeSettings.channel.irc, `<${user}> ${bot.fixMessage(message)}`);
-                console.log(`(Discord) ${user} => IRC: ${bot.fixMessage(message)}`);
+                ircbot.message(config.bridgeSettings.channel.irc, `${toNickname(userID) || user}: ${bot.fixMessage(message)}`);
+                console.log(`(Discord) ${toNickname(userID) || user} => IRC: ${bot.fixMessage(message)}`);
             });
             console.log("Listening in IRC.");
             ircbot.on("message", (sender, channel, message) => {
                 if (channel != config.bridgeSettings.channel.irc) {
                     return;
                 }
-                if (message.startsWith("!") || message.startsWith("&") || message.startsWith("$")) {
-                    return;
+                for (var i of config.bridgeSettings.other.ignore.triggers) {
+                    if (message.startsWith(i)) {
+                        return;
+                    }
+                }
+                for (var i of config.bridgeSettings.other.ignore.ircUsers) {
+                    if (sender.nick == i) {
+                        return;
+                    }
                 }
                 if ((message.indexOf("@everyone")) > -1 || message.indexOf("@here") > -1) {
                     ircbot.notice(sender, "Your message as been rejected due to it containing a mention to everyone.");
@@ -90,6 +106,7 @@ function start() {
                 });
                 console.log(`(IRC) ${sender.nick} => Discord: ${bot.fixMessage(message)}`);
             });
+            other();
         } else {
             throw "You are not in that Discord channel.";
         }
@@ -98,6 +115,65 @@ function start() {
     }
 }
 
+function other() {
+    ircbot.on("join", (user, channel) => {
+        if (user.nick == ircbot.myNick) {
+            return;
+        }
+        bot.sendMessage({
+            to: config.bridgeSettings.channel.discord,
+            message: `${user.nick} has joined ${channel}`
+        });
+    });
+    ircbot.on("part", (user, channel, message) => {
+        if (user.nick == ircbot.myNick) {
+            return;
+        }
+        bot.sendMessage({
+            to: config.bridgeSettings.channel.discord,
+            message: `${user.nick} has left ${channel} (${message})`
+        });
+    });
+    ircbot.on("quit", (user, channels, message) => {
+        if (user.nick == ircbot.myNick) {
+            return;
+        }
+        bot.sendMessage({
+            to: config.bridgeSettings.channel.discord,
+            message: `${user.nick} has quit (${message})`
+        });
+    });
+    ircbot.on("kick", (kicker, user, channel, message) => {
+        if (user.nick == ircbot.myNick) {
+            return;
+        }
+        bot.sendMessage({
+            to: config.bridgeSettings.channel.discord,
+            message: `${user.nick} was kicked from ${channel} by ${kicker.nick} (${message})`
+        });
+    });
+    ircbot.on("topic", (changer, channel, topic) => {
+        bot.sendMessage({
+            to: config.bridgeSettings.channel.discord,
+            message: `${changer.nick} has changed the topic of ${channel} to: ${topic}`
+        });
+        bot.editChannelInfo({
+            channel: config.bridgeSettings.channel.discord,
+            topic: "Put !, &, or $ before your messages to keep them from sending. Topic: " + topic
+        });
+    });
+    bot.editChannelInfo({
+        channel: config.bridgeSettings.channel.discord,
+        topic: "Put !, &, or $ before your messages to keep them from sending. Topic: " + ircbot.channels[config.bridgeSettings.channel.irc].topic
+    });
+}
+
+function toNickname (userID) {
+    if (bot.servers[config.bridgeSettings.channel.discordServer].members[userID].nick) {
+        return bot.servers[config.bridgeSettings.channel.discordServer].members[userID].nick;
+    }
+    return;
+}
 
 
 //Openshift
