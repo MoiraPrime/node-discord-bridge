@@ -20,6 +20,13 @@
 			"irc": "#channel",
 			"discord": "channelID here",
 			"discordServer": "serverId here"
+		},
+		"other": {
+			"ignore": {
+				"triggers": ["!", "$", "&", ".", "Any triggers you want ignored"],
+				"ircUsers": ["AnnoyingBot"],
+				"discordUsers": ["28137918739729 userid of discord users to ignore"]
+			}
 		}
 	}
 }
